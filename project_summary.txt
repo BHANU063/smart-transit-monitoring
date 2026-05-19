@@ -1,0 +1,47 @@
+Project Name: SmartTransit Monitoring System
+
+========================================
+1. PROBLEM STATEMENT
+========================================
+Bengaluru's public transportation system faces significant challenges including unpredictable bus schedules, severe overcrowding during peak hours, and lack of real-time insights for both passengers and transit authorities. Passengers often wait at stops without knowing when the next bus will arrive or if it will be too crowded to board. Meanwhile, transit authorities lack a centralized, real-time dashboard to monitor fleet health, track delays, predict crowd surges, and optimize routes on the fly. 
+
+========================================
+2. THE SOLUTION
+========================================
+SmartTransit is an intelligent, real-time monitoring dashboard designed to bridge the gap between transit authorities and daily commuters. It provides:
+- Live GPS tracking of buses plotted on a geographical map.
+- Real-time crowd estimation metrics (Low, Medium, High).
+- AI-driven insights for authorities to deploy extra buses, reroute traffic, or schedule maintenance.
+- A "Locate Me" feature for passengers to instantly find the nearest buses to their physical location.
+- Detailed analytics on route efficiency, on-time performance, and daily ridership trends.
+
+========================================
+3. TECHNOLOGY STACK
+========================================
+This project is built using a modern, full-stack JavaScript environment:
+
+FRONTEND:
+- React.js (via Vite): For building a fast, component-based user interface.
+- React Router: For seamless navigation between the Dashboard, Journey Planner, Analytics, Authority View, and AI Insights.
+- Leaflet & React-Leaflet: For rendering the interactive, real-time geographical map.
+- Chart.js & React-Chartjs-2: For rendering beautiful data visualizations and analytics (Line, Bar, Doughnut, and Radar charts).
+- Pure CSS: Custom CSS variables, glassmorphism, and grid backgrounds for a premium, responsive dark-mode UI.
+
+BACKEND:
+- Node.js & Express.js: Serves as the REST API layer handling requests for live bus data, stops, and historical analytics.
+- SQLite3: A lightweight database to store routes, bus telemetry, user data, and maintenance logs.
+- CORS: To enable secure cross-origin requests between the React frontend and the Express backend.
+- Concurrently: A utility used to run both the React frontend and Node backend simultaneously from a single command.
+
+========================================
+4. HOW TO RUN THIS PROJECT
+========================================
+To start the entire application (both frontend and backend), open your terminal in the root folder (`major project`) and simply run:
+
+    npm start
+
+* Note: Do not run `node server.js` directly in the root directory. The `npm start` command uses 'concurrently' to run the backend (`node backend/server.js`) and the frontend (`npm run dev --prefix frontend`) at the same time.
+
+Once running:
+- The React App will open at http://localhost:5173
+- The API Server runs on http://localhost:5000

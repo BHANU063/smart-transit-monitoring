@@ -358,6 +358,9 @@ main { padding-top: 60px; position: relative; z-index: 1; }
   height: 100%; width: 100%;
   background: #0b0f1a !important; /* Dark map background */
 }
+.leaflet-layer {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
 .leaflet-popup-content-wrapper {
   background: var(--surface3) !important;
   color: var(--text) !important;

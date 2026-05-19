@@ -7,6 +7,8 @@ export default function Passenger() {
   const [pref, setPref] = useState('Fastest');
   const [routes, setRoutes] = useState([]);
   const [expandedRoute, setExpandedRoute] = useState(null);
+  const [nearbyBuses, setNearbyBuses] = useState(null);
+  const [locating, setLocating] = useState(false);
 
   const swapStops = () => {
     const temp = fromStop;
@@ -56,6 +58,38 @@ export default function Passenger() {
   };
 
   const recommendedRoute = routes.find(r => r.rec);
+
+  const locateMe = () => {
+    if (!navigator.geolocation) {
+      showNotif('Geolocation is not supported by your browser');
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+        const res = await fetch('http://localhost:5000/api/buses');
+        const allBuses = await res.json();
+        
+        // Simple distance sort (Euclidean approx for demonstration)
+        const sorted = allBuses.sort((a, b) => {
+          const distA = Math.pow(a.lat - latitude, 2) + Math.pow(a.lng - longitude, 2);
+          const distB = Math.pow(b.lat - latitude, 2) + Math.pow(b.lng - longitude, 2);
+          return distA - distB;
+        });
+        
+        setNearbyBuses(sorted.slice(0, 3));
+        setLocating(false);
+        showNotif('Location found! Showing nearest buses.');
+      } catch (e) {
+        setLocating(false);
+        showNotif('Failed to fetch nearby buses.');
+      }
+    }, () => {
+      setLocating(false);
+      showNotif('Unable to retrieve your location');
+    });
+  };
 
   return (
     <div id="section-passenger" className="section active">
@@ -150,38 +184,31 @@ export default function Passenger() {
 
       <div className="grid-2" style={{ marginTop: '1.5rem' }}>
         <div className="card">
-          <div className="card-title" style={{ marginBottom: '1rem' }}>📍 Nearby Stop Status</div>
+          <div className="card-header">
+            <div className="card-title">📍 Nearby Buses</div>
+            <button className="btn" style={{ fontSize: '0.78rem', padding: '5px 12px', border: '1px solid var(--border)', color: 'var(--text2)', background: 'transparent' }} onClick={locateMe} disabled={locating}>
+              {locating ? 'Locating...' : '📍 Locate Me'}
+            </button>
+          </div>
           <div id="nearby-stops">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>MG Road (Stop A)</div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text2)' }}>Platform 1 · Central</div>
+            {nearbyBuses ? (
+              nearbyBuses.map((bus, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Route {bus.route_name}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text2)' }}>Heading to {bus.next_stop_name}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: 'var(--green)', fontWeight: 700, fontFamily: 'var(--mono)' }}>{bus.eta_minutes} min</div>
+                    <div style={{ fontSize: '0.7rem', color: crowdColor(bus.crowd_level) }}>{bus.crowd_level} Crowd</div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text3)' }}>
+                Click "Locate Me" to find buses near your current location.
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: 'var(--green)', fontWeight: 700, fontFamily: 'var(--mono)' }}>3 min</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text2)' }}>Bus 17A</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>City Center Hub</div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text2)' }}>Platform 3 · 5 buses</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: 'var(--yellow)', fontWeight: 700, fontFamily: 'var(--mono)' }}>7 min</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--yellow)' }}>⚠️ Crowded</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0' }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Koramangala 4B</div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text2)' }}>Platform 2 · South</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: 'var(--green)', fontWeight: 700, fontFamily: 'var(--mono)' }}>11 min</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--green)' }}>✅ Spacious</div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
