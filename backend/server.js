@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const { startSimulation, stopSimulation } = require('./simulate');
+const { startSimulation, stopSimulation, getCurrentWeather } = require('./simulate');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -71,7 +71,6 @@ app.get('/api/live', (req, res) => {
 
 // GET /api/analytics - Analytics data (Route-wise crowd, delay count, etc)
 app.get('/api/analytics', (req, res) => {
-    // A simplified analytics object combining multiple queries
     db.all(`
         SELECT r.name, COUNT(b.id) as bus_count, AVG(b.passenger_count) as avg_passengers 
         FROM routes r 
@@ -83,11 +82,24 @@ app.get('/api/analytics', (req, res) => {
         db.get(`SELECT COUNT(*) as delayed_buses FROM buses WHERE traffic_condition = 'Heavy'`, [], (err, delayedCount) => {
             if (err) return res.status(500).json({ error: err.message });
             
-            res.json({
-                routeStats,
-                delayedBuses: delayedCount.delayed_buses
+            db.get(`SELECT total_passengers, co2_saved_kg FROM analytics WHERE id = 1`, [], (err, analyticsData) => {
+                res.json({
+                    routeStats,
+                    delayedBuses: delayedCount ? delayedCount.delayed_buses : 0,
+                    weather: getCurrentWeather(),
+                    totalPassengers: analyticsData ? analyticsData.total_passengers : 0,
+                    co2Saved: analyticsData ? analyticsData.co2_saved_kg : 0
+                });
             });
         });
+    });
+});
+
+// GET /api/events - Live incident feed
+app.get('/api/events', (req, res) => {
+    db.all(`SELECT * FROM system_events ORDER BY timestamp DESC LIMIT 15`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
     });
 });
 
@@ -105,5 +117,5 @@ app.post('/api/simulate/stop', (req, res) => {
 
 // Start Server
 app.listen(PORT, () => {
-    console.log(\`Backend Server running on port \${PORT}\`);
+    console.log(`Backend Server running on port ${PORT}`);
 });

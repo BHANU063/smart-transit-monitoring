@@ -43,7 +43,7 @@ export default function MapPage() {
           {/* Draw Stops */}
           {stops.map(stop => (
             <Marker 
-              key={\`stop-\${stop.id}\`} 
+              key={`stop-${stop.id}`} 
               position={[stop.lat, stop.lng]}
               icon={L.divIcon({
                 className: 'custom-stop-icon',
@@ -63,11 +63,11 @@ export default function MapPage() {
 
             return (
               <Marker 
-                key={\`bus-\${bus.id}\`} 
+                key={`bus-${bus.id}`} 
                 position={[bus.lat, bus.lng]}
                 icon={L.divIcon({
                   className: 'custom-bus-icon',
-                  html: \`<div style="background: \${color}; border: 2px solid white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; box-shadow: 0 0 5px rgba(0,0,0,0.5);">🚌</div>\`,
+                  html: `<div style="background: ${color}; border: 2px solid white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; box-shadow: 0 0 5px rgba(0,0,0,0.5);">🚌</div>`,
                   iconSize: [28, 28],
                   iconAnchor: [14, 14]
                 })}
@@ -77,7 +77,7 @@ export default function MapPage() {
                   Next Stop: {bus.next_stop_name}<br/>
                   ETA: {bus.eta_minutes} min<br/>
                   Traffic: {bus.traffic_condition}<br/>
-                  <Link to={\`/bus/\${bus.id}\`} style={{ marginTop: '5px', display: 'inline-block', color: '#3b82f6' }}>View Details</Link>
+                  <Link to={`/bus/${bus.id}`} style={{ marginTop: '5px', display: 'inline-block', color: '#3b82f6' }}>View Details</Link>
                 </Popup>
               </Marker>
             );

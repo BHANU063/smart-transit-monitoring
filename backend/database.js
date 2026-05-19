@@ -77,6 +77,21 @@ const initDb = () => {
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
+        // 7. system_events
+        db.run(`CREATE TABLE IF NOT EXISTS system_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message TEXT NOT NULL,
+            type TEXT DEFAULT 'info',
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // 8. analytics (for CO2 and global metrics)
+        db.run(`CREATE TABLE IF NOT EXISTS analytics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            total_passengers INTEGER DEFAULT 0,
+            co2_saved_kg REAL DEFAULT 0.0
+        )`);
+
         console.log("Tables created successfully.");
 
         // Clean existing data for clean seed
@@ -87,46 +102,48 @@ const initDb = () => {
         db.run('DELETE FROM bus_locations');
         db.run('DELETE FROM passenger_events');
         db.run('DELETE FROM eta_logs');
+        db.run('DELETE FROM system_events');
+        db.run('DELETE FROM analytics');
 
         // ==== SEED DATA: Bengaluru Routes ====
         const routes = [
-            { id: 1, name: 'Majestic to Whitefield', color: '#ef4444' }, // Red
-            { id: 2, name: 'Silk Board to KR Puram', color: '#3b82f6' }, // Blue
-            { id: 3, name: 'Hebbal to Electronic City', color: '#10b981' }, // Green
-            { id: 4, name: 'Banashankari to Manyata', color: '#f59e0b' } // Yellow
+            { id: 1, name: '335E (Majestic ⇄ Whitefield)', color: '#ef4444' }, 
+            { id: 2, name: '500D (Hebbal ⇄ Silk Board)', color: '#3b82f6' }, 
+            { id: 3, name: '500HS (Hebbal ⇄ Sarjapur)', color: '#10b981' }, 
+            { id: 4, name: '201 (Banashankari ⇄ CV Raman Nagar)', color: '#f59e0b' } 
         ];
         
         routes.forEach(r => db.run(`INSERT INTO routes (id, name, color) VALUES (?, ?, ?)`, [r.id, r.name, r.color]));
 
         // Stops Data (Approx coordinates)
         const stopsData = [
-            // Route 1 Stops
+            // Route 1 Stops (335E: Majestic to Whitefield)
             { id: 1, name: 'Majestic', lat: 12.9771, lng: 77.5728 },
             { id: 2, name: 'Corporation Circle', lat: 12.9654, lng: 77.5858 },
             { id: 3, name: 'Indiranagar', lat: 12.9784, lng: 77.6408 },
-            { id: 4, name: 'Marathahalli', lat: 12.9569, lng: 77.7011 },
-            { id: 5, name: 'Whitefield', lat: 12.9698, lng: 77.7499 },
+            { id: 4, name: 'Marathahalli Bridge', lat: 12.9569, lng: 77.7011 },
+            { id: 5, name: 'Whitefield TTMC', lat: 12.9698, lng: 77.7499 },
 
-            // Route 2 Stops
-            { id: 6, name: 'Silk Board', lat: 12.9176, lng: 77.6238 },
-            { id: 7, name: 'HSR Layout', lat: 12.9121, lng: 77.6446 },
-            { id: 8, name: 'Bellandur', lat: 12.9304, lng: 77.6784 },
-            { id: 9, name: 'Mahadevapura', lat: 12.9880, lng: 77.6895 },
-            { id: 10, name: 'KR Puram', lat: 13.0084, lng: 77.7027 },
+            // Route 2 Stops (500D: Hebbal to Silk Board via ORR)
+            { id: 6, name: 'Hebbal', lat: 13.0354, lng: 77.5988 },
+            { id: 7, name: 'Manyata Tech Park', lat: 13.0450, lng: 77.6206 },
+            { id: 8, name: 'KR Puram Railway Station', lat: 13.0084, lng: 77.7027 },
+            { id: 9, name: 'Bellandur Gate', lat: 12.9304, lng: 77.6784 },
+            { id: 10, name: 'Silk Board Junction', lat: 12.9176, lng: 77.6238 },
 
-            // Route 3 Stops
+            // Route 3 Stops (500HS: Hebbal to Sarjapur)
             { id: 11, name: 'Hebbal', lat: 13.0354, lng: 77.5988 },
-            { id: 12, name: 'Mekhri Circle', lat: 13.0133, lng: 77.5805 },
-            { id: 13, name: 'Shantinagar', lat: 12.9566, lng: 77.5960 },
-            { id: 14, name: 'Bommanahalli', lat: 12.9030, lng: 77.6242 },
-            { id: 15, name: 'Electronic City', lat: 12.8399, lng: 77.6770 },
+            { id: 12, name: 'Kalyan Nagar', lat: 13.0221, lng: 77.6403 },
+            { id: 13, name: 'Tin Factory', lat: 12.9941, lng: 77.6662 },
+            { id: 14, name: 'Agara Lake', lat: 12.9238, lng: 77.6409 },
+            { id: 15, name: 'Sarjapur Signal', lat: 12.9244, lng: 77.6373 },
 
-            // Route 4 Stops
-            { id: 16, name: 'Banashankari', lat: 12.9152, lng: 77.5736 },
-            { id: 17, name: 'Jayanagar', lat: 12.9299, lng: 77.5826 },
-            { id: 18, name: 'MG Road', lat: 12.9719, lng: 77.6011 },
-            { id: 19, name: 'Frazer Town', lat: 12.9972, lng: 77.6141 },
-            { id: 20, name: 'Manyata Tech Park', lat: 13.0450, lng: 77.6206 }
+            // Route 4 Stops (201: Banashankari to CV Raman Nagar)
+            { id: 16, name: 'Banashankari TTMC', lat: 12.9152, lng: 77.5736 },
+            { id: 17, name: 'Jayanagar 4th Block', lat: 12.9299, lng: 77.5826 },
+            { id: 18, name: 'Dairy Circle', lat: 12.9365, lng: 77.5950 },
+            { id: 19, name: 'Domlur', lat: 12.9625, lng: 77.6382 },
+            { id: 20, name: 'CV Raman Nagar', lat: 12.9863, lng: 77.6648 }
         ];
 
         stopsData.forEach(s => db.run(`INSERT INTO stops (id, name, lat, lng) VALUES (?, ?, ?, ?)`, [s.id, s.name, s.lat, s.lng]));
@@ -149,9 +166,9 @@ const initDb = () => {
         const initialBuses = [
             { id: 1, route_id: 1, lat: 12.9771, lng: 77.5728, passenger_count: 10, next_stop_id: 2, traffic: 'Light', eta: 5 },
             { id: 2, route_id: 1, lat: 12.9569, lng: 77.7011, passenger_count: 40, next_stop_id: 5, traffic: 'Moderate', eta: 10 },
-            { id: 3, route_id: 2, lat: 12.9176, lng: 77.6238, passenger_count: 5, next_stop_id: 7, traffic: 'Light', eta: 3 },
-            { id: 4, route_id: 3, lat: 13.0133, lng: 77.5805, passenger_count: 48, next_stop_id: 13, traffic: 'Heavy', eta: 25 },
-            { id: 5, route_id: 4, lat: 12.9719, lng: 77.6011, passenger_count: 25, next_stop_id: 19, traffic: 'Moderate', eta: 12 }
+            { id: 3, route_id: 2, lat: 13.0354, lng: 77.5988, passenger_count: 5, next_stop_id: 7, traffic: 'Light', eta: 3 },
+            { id: 4, route_id: 3, lat: 13.0221, lng: 77.6403, passenger_count: 48, next_stop_id: 13, traffic: 'Heavy', eta: 25 },
+            { id: 5, route_id: 4, lat: 12.9365, lng: 77.5950, passenger_count: 25, next_stop_id: 19, traffic: 'Moderate', eta: 12 }
         ];
 
         initialBuses.forEach(b => {
@@ -159,6 +176,12 @@ const initDb = () => {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
                     [b.id, b.route_id, b.lat, b.lng, b.passenger_count, b.passenger_count > 35 ? 'High' : (b.passenger_count > 15 ? 'Medium' : 'Low'), b.traffic, b.next_stop_id, b.eta]);
         });
+
+        // Initialize Analytics
+        db.run(`INSERT INTO analytics (id, total_passengers, co2_saved_kg) VALUES (1, 1250, 250.0)`);
+        
+        // Initial Event
+        db.run(`INSERT INTO system_events (message, type) VALUES ('System initialized. Simulation engine starting.', 'info')`);
 
         console.log("Seeding complete: Bengaluru Routes loaded.");
     });

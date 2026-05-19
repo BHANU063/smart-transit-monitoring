@@ -5,7 +5,7 @@ export default function Admin() {
 
   const handleSimulate = async (action) => {
     try {
-      const res = await fetch(\`http://localhost:5000/api/simulate/\${action}\`, { method: 'POST' });
+      const res = await fetch(`http://localhost:5000/api/simulate/${action}`, { method: 'POST' });
       const data = await res.json();
       setMessage(data.message);
       setTimeout(() => setMessage(''), 3000);

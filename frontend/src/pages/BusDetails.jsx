@@ -55,19 +55,19 @@ export default function BusDetails() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Crowd Level:</span>
-            <span className={\`badge bg-\${bus.crowd_level}\`}>{bus.crowd_level}</span>
+            <span className={`badge bg-${bus.crowd_level}`}>{bus.crowd_level}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Traffic Condition:</span>
-            <span className={\`badge bg-\${bus.traffic_condition}\`}>{bus.traffic_condition}</span>
+            <span className={`badge bg-${bus.traffic_condition}`}>{bus.traffic_condition}</span>
           </div>
         </div>
 
         <div style={{ marginTop: '2rem' }}>
           <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
             <div 
-              className={\`bg-\${bus.crowd_level}\`} 
-              style={{ width: \`\${(bus.passenger_count / bus.capacity) * 100}%\`, height: '100%', transition: 'width 0.5s ease' }}
+              className={`bg-${bus.crowd_level}`} 
+              style={{ width: `${(bus.passenger_count / bus.capacity) * 100}%`, height: '100%', transition: 'width 0.5s ease' }}
             ></div>
           </div>
           <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
