@@ -1,18 +1,14 @@
 {
-  "name": "major-project",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "smart-transit-monitoring",
+  "version": "2.0.0",
+  "description": "Smart Transit Monitoring System for Bengaluru Bus Routes",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "postinstall": "npm install --prefix backend && npm install --prefix frontend",
+    "dev": "npm run dev --prefix frontend",
+    "server": "node backend/server.js",
+    "start": "concurrently \"npm run server\" \"npm run dev\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "sqlite3": "^6.0.1"
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
