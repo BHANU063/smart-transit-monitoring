@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
+import MapPage from './pages/MapPage';
+import BusDetails from './pages/BusDetails';
 // Placeholders for other pages
-const MapPage = () => <div className="main-content"><h2>Live Map</h2><p>Coming soon...</p></div>;
 const Analytics = () => <div className="main-content"><h2>Analytics</h2><p>Coming soon...</p></div>;
 const Admin = () => <div className="main-content"><h2>Admin</h2><p>Coming soon...</p></div>;
 
@@ -20,6 +21,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/bus/:id" element={<BusDetails />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/admin" element={<Admin />} />
         </Routes>
