@@ -4,45 +4,42 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 export default function Dashboard() {
-  const [buses, setBuses] = useState([]);
-  const [stops, setStops] = useState([]);
+  const initialBuses = [
+    { id: 1, route_name: '17A', lat: 12.9716, lng: 77.5946, crowd_level: 'Low', next_stop_name: 'MG Road', eta_minutes: 2, traffic_condition: 'Normal' },
+    { id: 2, route_name: '35C', lat: 12.9352, lng: 77.6245, crowd_level: 'Medium', next_stop_name: 'Koramangala', eta_minutes: 5, traffic_condition: 'Heavy' },
+    { id: 3, route_name: '92', lat: 12.9172, lng: 77.6228, crowd_level: 'High', next_stop_name: 'Silk Board', eta_minutes: 8, traffic_condition: 'Critical' },
+    { id: 4, route_name: '7B', lat: 12.9784, lng: 77.6408, crowd_level: 'Low', next_stop_name: 'Indiranagar', eta_minutes: 3, traffic_condition: 'Normal' },
+    { id: 5, route_name: '51', lat: 12.9250, lng: 77.5938, crowd_level: 'Medium', next_stop_name: 'Jayanagar', eta_minutes: 6, traffic_condition: 'Heavy' },
+    { id: 6, route_name: '22', lat: 12.9915, lng: 77.5533, crowd_level: 'High', next_stop_name: 'Rajajinagar', eta_minutes: 10, traffic_condition: 'Critical' }
+  ];
+
+  const initialStops = [
+    { id: 1, name: 'MG Road', lat: 12.9716, lng: 77.5946 },
+    { id: 2, name: 'Koramangala', lat: 12.9352, lng: 77.6245 },
+    { id: 3, name: 'Silk Board', lat: 12.9172, lng: 77.6228 },
+    { id: 4, name: 'Indiranagar', lat: 12.9784, lng: 77.6408 },
+    { id: 5, name: 'Jayanagar', lat: 12.9250, lng: 77.5938 },
+    { id: 6, name: 'Rajajinagar', lat: 12.9915, lng: 77.5533 }
+  ];
+
+  const [buses, setBuses] = useState(initialBuses);
+  const [stops, setStops] = useState(initialStops);
   const [stats, setStats] = useState({
-    busesCount: 0,
-    delayedCount: 0,
-    criticalCount: 0,
-    avgCrowd: 62
+    busesCount: 6,
+    delayedCount: 2,
+    criticalCount: 2,
+    avgCrowd: 68
   });
 
-  const fetchData = async () => {
-    try {
-      const [busesRes, stopsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/buses'),
-        fetch('http://localhost:5000/api/stops')
-      ]);
-      const busesData = await busesRes.json();
-      const stopsData = await stopsRes.json();
-      
-      setBuses(busesData);
-      setStops(stopsData);
-
-      const delayed = busesData.filter(b => b.traffic_condition === 'Heavy').length;
-      const critical = busesData.filter(b => b.traffic_condition === 'Critical' || b.crowd_level === 'High').length;
-      
-      setStats({
-        busesCount: busesData.length,
-        delayedCount: delayed,
-        criticalCount: critical,
-        avgCrowd: Math.floor(Math.random() * 20) + 50 // Mock random average crowd
-      });
-
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
+  // Simulate live tracking in the frontend
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 4000);
+    const interval = setInterval(() => {
+      setBuses(prevBuses => prevBuses.map(bus => ({
+        ...bus,
+        lat: bus.lat + (Math.random() - 0.5) * 0.003, // Random movement
+        lng: bus.lng + (Math.random() - 0.5) * 0.003
+      })));
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
