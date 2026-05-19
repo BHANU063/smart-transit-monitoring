@@ -139,5 +139,5 @@ setInterval(updateBusSimulation, SIMULATION_INTERVAL);
 console.log("Simulation engine started.");
 
 app.listen(PORT, () => {
-    console.log(\`Server is running on http://localhost:\${PORT}\`);
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
