@@ -21,7 +21,7 @@ const initDb = () => {
             lng REAL NOT NULL
         )`);
 
-        // Create RouteStops Table (Associates stops to routes in order)
+        // Create RouteStops Table
         db.run(`CREATE TABLE IF NOT EXISTS route_stops (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             route_id INTEGER,
@@ -31,7 +31,7 @@ const initDb = () => {
             FOREIGN KEY(stop_id) REFERENCES stops(id)
         )`);
 
-        // Create Buses Table
+        // Create Buses Table with traffic_condition
         db.run(`CREATE TABLE IF NOT EXISTS buses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             route_id INTEGER,
@@ -40,10 +40,18 @@ const initDb = () => {
             capacity INTEGER DEFAULT 50,
             passenger_count INTEGER DEFAULT 0,
             crowd_level TEXT DEFAULT 'Low',
+            traffic_condition TEXT DEFAULT 'Light',
             next_stop_id INTEGER,
             eta_minutes INTEGER,
             FOREIGN KEY(route_id) REFERENCES routes(id),
             FOREIGN KEY(next_stop_id) REFERENCES stops(id)
+        )`);
+
+        // Create Analytics Table
+        db.run(`CREATE TABLE IF NOT EXISTS analytics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            total_passengers INTEGER DEFAULT 0,
+            co2_saved_kg REAL DEFAULT 0.0
         )`);
 
         console.log("Tables created successfully.");
@@ -53,6 +61,7 @@ const initDb = () => {
         db.run('DELETE FROM buses');
         db.run('DELETE FROM stops');
         db.run('DELETE FROM routes');
+        db.run('DELETE FROM analytics');
 
         // Seed Data
         console.log("Seeding initial data...");
@@ -83,11 +92,13 @@ const initDb = () => {
             db.run(`INSERT INTO route_stops (route_id, stop_id, stop_order) VALUES (2, ?, ?)`, [stopId, index + 1]);
         });
 
-        db.run(`INSERT INTO buses (id, route_id, lat, lng, passenger_count, crowd_level, next_stop_id, eta_minutes) 
-                VALUES (1, 1, 12.9716, 77.5946, 15, 'Low', 2, 5)`);
+        db.run(`INSERT INTO buses (id, route_id, lat, lng, passenger_count, crowd_level, traffic_condition, next_stop_id, eta_minutes) 
+                VALUES (1, 1, 12.9716, 77.5946, 15, 'Low', 'Light', 2, 5)`);
         
-        db.run(`INSERT INTO buses (id, route_id, lat, lng, passenger_count, crowd_level, next_stop_id, eta_minutes) 
-                VALUES (2, 2, 12.9900, 77.6200, 45, 'High', 2, 12)`);
+        db.run(`INSERT INTO buses (id, route_id, lat, lng, passenger_count, crowd_level, traffic_condition, next_stop_id, eta_minutes) 
+                VALUES (2, 2, 12.9900, 77.6200, 45, 'High', 'Moderate', 2, 12)`);
+
+        db.run(`INSERT INTO analytics (id, total_passengers, co2_saved_kg) VALUES (1, 1450, 435.5)`); // Base starting point
 
         console.log("Seeding complete.");
     });

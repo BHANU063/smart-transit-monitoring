@@ -31,6 +31,7 @@
         <nav>
             <button class="nav-btn active" id="nav-dashboard">Dashboard</button>
             <button class="nav-btn" id="nav-map">Map View</button>
+            <button class="nav-btn" id="nav-analytics">Authority Analytics</button>
             <button class="nav-btn" id="theme-toggle" aria-label="Toggle Theme">
                 <svg id="theme-icon" class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -70,10 +71,38 @@
         <!-- Map View -->
         <div id="map-view" style="display: none;">
             <section class="map-section">
-                <h2 class="section-title">Live Map Tracker</h2>
+                <h2 class="section-title">Live Geographical Tracker</h2>
                 <div class="glass-panel map-container-wrapper">
                     <div id="map"></div>
                 </div>
+            </section>
+        </div>
+
+        <!-- Analytics View -->
+        <div id="analytics-view" style="display: none;">
+            <section class="overview-section">
+                <div class="glass-panel stat-card" style="border-left: 4px solid #8b5cf6;">
+                    <h3>Total Passengers Served</h3>
+                    <p id="total-passengers" class="stat-value" style="color: #8b5cf6;">0</p>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">Cumulative boarding count</p>
+                </div>
+                <div class="glass-panel stat-card" style="border-left: 4px solid #10b981;">
+                    <h3>CO₂ Emissions Saved (kg)</h3>
+                    <p id="co2-saved" class="stat-value" style="color: #10b981;">0.0</p>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">Compared to equivalent car trips</p>
+                </div>
+                <div class="glass-panel stat-card" style="border-left: 4px solid #f59e0b;">
+                    <h3>Avg Fleet Crowd Level</h3>
+                    <p id="avg-crowd" class="stat-value" style="color: #f59e0b;">Low</p>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">System-wide density</p>
+                </div>
+            </section>
+            
+            <section class="glass-panel" style="padding: 2rem; margin-top: 2rem;">
+                <h2>Environmental Impact Report</h2>
+                <p style="margin-top: 1rem; color: var(--text-secondary); line-height: 1.6;">
+                    By maintaining an efficient public transit network, the city has successfully offset significant carbon emissions. Each passenger utilizing the SmartTransit system saves approximately 0.2kg of CO₂ per trip compared to driving a personal vehicle. Real-time traffic simulation ensures our fleet navigates efficiently even during Heavy congestion periods.
+                </p>
             </section>
         </div>
     </main>

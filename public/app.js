@@ -4,11 +4,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeBusesCount = document.getElementById('active-buses-count');
     const recommendationContent = document.getElementById('recommendation-content');
     
+    // Analytics DOM Elements
+    const totalPassengersEl = document.getElementById('total-passengers');
+    const co2SavedEl = document.getElementById('co2-saved');
+    const avgCrowdEl = document.getElementById('avg-crowd');
+    
     // Navigation & Views
     const navDashboard = document.getElementById('nav-dashboard');
     const navMap = document.getElementById('nav-map');
+    const navAnalytics = document.getElementById('nav-analytics');
     const viewDashboard = document.getElementById('dashboard-view');
     const viewMap = document.getElementById('map-view');
+    const viewAnalytics = document.getElementById('analytics-view');
     
     // Theme Toggle
     const themeToggleBtn = document.getElementById('theme-toggle');
@@ -34,20 +41,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // View Switcher
-    navDashboard.addEventListener('click', () => {
-        navDashboard.classList.add('active');
-        navMap.classList.remove('active');
-        viewDashboard.style.display = 'block';
-        viewMap.style.display = 'none';
-    });
+    // View Switcher Utility
+    function switchView(activeNav, activeView) {
+        [navDashboard, navMap, navAnalytics].forEach(nav => nav.classList.remove('active'));
+        [viewDashboard, viewMap, viewAnalytics].forEach(view => view.style.display = 'none');
+        
+        activeNav.classList.add('active');
+        activeView.style.display = 'block';
+    }
+
+    navDashboard.addEventListener('click', () => switchView(navDashboard, viewDashboard));
+    navAnalytics.addEventListener('click', () => switchView(navAnalytics, viewAnalytics));
 
     navMap.addEventListener('click', () => {
-        navMap.classList.add('active');
-        navDashboard.classList.remove('active');
-        viewDashboard.style.display = 'none';
-        viewMap.style.display = 'block';
-        
+        switchView(navMap, viewMap);
         // Leaflet needs to know the container size changed
         if (!mapInitialized) {
             initMap();
@@ -90,19 +97,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ----- Core Data Fetching -----
 
-    async function fetchBuses() {
+    async function fetchData() {
         try {
-            const response = await fetch('/api/buses');
-            if (!response.ok) throw new Error('Network response was not ok');
-            const buses = await response.json();
-            
-            updateDashboard(buses);
-            if (mapInitialized) {
-                updateMapMarkers(buses);
+            const [busesRes, analyticsRes] = await Promise.all([
+                fetch('/api/buses'),
+                fetch('/api/analytics')
+            ]);
+
+            if (busesRes.ok) {
+                const buses = await busesRes.json();
+                updateDashboard(buses);
+                if (mapInitialized) updateMapMarkers(buses);
             }
+
+            if (analyticsRes.ok) {
+                const analytics = await analyticsRes.json();
+                updateAnalytics(analytics);
+            }
+            
         } catch (error) {
-            console.error('Error fetching bus data:', error);
+            console.error('Error fetching data:', error);
         }
+    }
+
+    function updateAnalytics(analytics) {
+        totalPassengersEl.innerText = analytics.total_passengers.toLocaleString();
+        co2SavedEl.innerText = analytics.co2_saved_kg.toFixed(1);
     }
 
     function updateMapMarkers(buses) {
@@ -120,27 +140,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 iconAnchor: [15, 15]
             });
 
+            const popupContent = `
+                <b>${bus.route_name}</b><br>
+                Next Stop: ${bus.next_stop_name}<br>
+                Passengers: ${bus.passenger_count}/${bus.capacity}<br>
+                Crowd: <b>${bus.crowd_level}</b><br>
+                Traffic: <b>${bus.traffic_condition || 'Light'}</b>
+            `;
+
             if (busMarkers[bus.id]) {
                 // Update existing marker position
-                // Leaflet's setLatLng animates smoothly if the distance is small
                 busMarkers[bus.id].setLatLng([bus.lat, bus.lng]);
                 busMarkers[bus.id].setIcon(busIcon);
-                busMarkers[bus.id].getPopup().setContent(`
-                    <b>${bus.route_name}</b><br>
-                    Next Stop: ${bus.next_stop_name}<br>
-                    Passengers: ${bus.passenger_count}/${bus.capacity}<br>
-                    Crowd: <b>${bus.crowd_level}</b>
-                `);
+                busMarkers[bus.id].getPopup().setContent(popupContent);
             } else {
                 // Create new marker
                 const marker = L.marker([bus.lat, bus.lng], { icon: busIcon })
                     .addTo(map)
-                    .bindPopup(`
-                        <b>${bus.route_name}</b><br>
-                        Next Stop: ${bus.next_stop_name}<br>
-                        Passengers: ${bus.passenger_count}/${bus.capacity}<br>
-                        Crowd: <b>${bus.crowd_level}</b>
-                    `);
+                    .bindPopup(popupContent);
                 busMarkers[bus.id] = marker;
             }
         });
@@ -149,6 +166,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateDashboard(buses) {
         // Update active buses count
         activeBusesCount.innerText = buses.length;
+
+        // Calculate Average Fleet Crowd
+        let highCount = 0; let medCount = 0;
+        buses.forEach(b => {
+            if (b.crowd_level === 'High') highCount++;
+            else if (b.crowd_level === 'Medium') medCount++;
+        });
+        
+        if (highCount > buses.length / 2) avgCrowdEl.innerText = 'High';
+        else if (medCount + highCount > buses.length / 2) avgCrowdEl.innerText = 'Medium';
+        else avgCrowdEl.innerText = 'Low';
+        
+        // Update avg crowd color
+        avgCrowdEl.style.color = avgCrowdEl.innerText === 'High' ? '#ef4444' : (avgCrowdEl.innerText === 'Medium' ? '#f59e0b' : '#10b981');
 
         // Smart Recommendation Logic
         let bestBus = null;
@@ -179,12 +210,18 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'glass-panel bus-card';
             const routeColor = bus.route_color || '#3b82f6';
 
+            // Ensure traffic condition exists for older seeds
+            const traffic = bus.traffic_condition || 'Light';
+
             card.innerHTML = `
-                <div class="bus-header">
-                    <span class="bus-route-tag" style="background-color: ${routeColor}33; color: ${routeColor}; border: 1px solid ${routeColor};">
+                <div class="bus-header" style="gap: 10px; display: flex; flex-wrap: wrap;">
+                    <span class="bus-route-tag" style="background-color: ${routeColor}33; color: ${routeColor}; border: 1px solid ${routeColor}; flex-grow: 1;">
                         ${bus.route_name}
                     </span>
-                    <span class="crowd-badge crowd-${bus.crowd_level}">${bus.crowd_level}</span>
+                    <div style="display: flex; gap: 5px;">
+                        <span class="traffic-badge traffic-${traffic}" title="Traffic Condition">${traffic}</span>
+                        <span class="crowd-badge crowd-${bus.crowd_level}" title="Crowd Level">${bus.crowd_level}</span>
+                    </div>
                 </div>
                 
                 <div class="bus-details">
@@ -211,8 +248,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initial fetch
-    fetchBuses();
+    fetchData();
 
     // Poll every 3 seconds
-    setInterval(fetchBuses, 3000);
+    setInterval(fetchData, 3000);
 });

@@ -40,17 +40,10 @@ app.get('/api/stops', (req, res) => {
     });
 });
 
-app.get('/api/route-stops/:routeId', (req, res) => {
-    const routeId = req.params.routeId;
-    db.all(`
-        SELECT rs.stop_order, s.* 
-        FROM route_stops rs 
-        JOIN stops s ON rs.stop_id = s.id 
-        WHERE rs.route_id = ? 
-        ORDER BY rs.stop_order
-    `, [routeId], (err, rows) => {
+app.get('/api/analytics', (req, res) => {
+    db.get(`SELECT * FROM analytics WHERE id = 1`, [], (err, row) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
+        res.json(row || { total_passengers: 0, co2_saved_kg: 0 });
     });
 });
 
@@ -74,6 +67,18 @@ function updateBusSimulation() {
                 const lngDiff = stop.lng - bus.lng;
                 const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
 
+                // Dynamic Traffic Logic
+                const trafficRoll = Math.random();
+                let trafficCondition = bus.traffic_condition;
+                if (trafficRoll < 0.1) trafficCondition = 'Heavy';
+                else if (trafficRoll < 0.3) trafficCondition = 'Moderate';
+                else trafficCondition = 'Light';
+
+                // Speed factor based on traffic
+                let speedFactor = 0.1;
+                if (trafficCondition === 'Moderate') speedFactor = 0.05;
+                if (trafficCondition === 'Heavy') speedFactor = 0.02;
+
                 let newLat = bus.lat;
                 let newLng = bus.lng;
                 let nextStopId = bus.next_stop_id;
@@ -81,18 +86,26 @@ function updateBusSimulation() {
                 let eta = bus.eta_minutes;
 
                 if (distance > 0.001) {
-                    // Move 10% closer each tick
-                    newLat += latDiff * 0.1;
-                    newLng += lngDiff * 0.1;
-                    eta = Math.max(1, Math.floor(distance * 100)); // Arbitrary ETA calculation based on distance
+                    newLat += latDiff * speedFactor;
+                    newLng += lngDiff * speedFactor;
+                    
+                    // ETA longer if traffic is heavy
+                    const etaMultiplier = trafficCondition === 'Heavy' ? 3 : (trafficCondition === 'Moderate' ? 1.5 : 1);
+                    eta = Math.max(1, Math.floor(distance * 100 * etaMultiplier));
                 } else {
                     // Reached stop!
-                    // 1. Update passenger count randomly
                     const boarding = Math.floor(Math.random() * 10);
                     const alighting = Math.floor(Math.random() * Math.min(10, passengerCount));
                     passengerCount = Math.max(0, Math.min(bus.capacity, passengerCount + boarding - alighting));
 
-                    // 2. Find next stop in route
+                    // Update Analytics if passengers boarded
+                    if (boarding > 0) {
+                        const co2SavedPerPassenger = 0.2; // approx 0.2kg CO2 saved per trip vs car
+                        const totalCo2Saved = boarding * co2SavedPerPassenger;
+                        db.run(`UPDATE analytics SET total_passengers = total_passengers + ?, co2_saved_kg = co2_saved_kg + ? WHERE id = 1`, [boarding, totalCo2Saved]);
+                    }
+
+                    // Find next stop in route
                     db.get(`
                         SELECT stop_id FROM route_stops 
                         WHERE route_id = ? AND stop_order > (
@@ -106,22 +119,22 @@ function updateBusSimulation() {
                             // Reached end of route, loop back to start
                             db.get(`SELECT stop_id FROM route_stops WHERE route_id = ? ORDER BY stop_order ASC LIMIT 1`, [bus.route_id], (err, firstStop) => {
                                 if (firstStop) nextStopId = firstStop.stop_id;
-                                updateBusRecord(bus.id, newLat, newLng, passengerCount, nextStopId, eta, bus.capacity);
+                                updateBusRecord(bus.id, newLat, newLng, passengerCount, nextStopId, eta, bus.capacity, trafficCondition);
                             });
                             return;
                         }
-                        updateBusRecord(bus.id, newLat, newLng, passengerCount, nextStopId, eta, bus.capacity);
+                        updateBusRecord(bus.id, newLat, newLng, passengerCount, nextStopId, eta, bus.capacity, trafficCondition);
                     });
                     return; // Wait for async query
                 }
                 
-                updateBusRecord(bus.id, newLat, newLng, passengerCount, nextStopId, eta, bus.capacity);
+                updateBusRecord(bus.id, newLat, newLng, passengerCount, nextStopId, eta, bus.capacity, trafficCondition);
             });
         });
     });
 }
 
-function updateBusRecord(busId, lat, lng, passengerCount, nextStopId, eta, capacity) {
+function updateBusRecord(busId, lat, lng, passengerCount, nextStopId, eta, capacity, trafficCondition) {
     let crowdLevel = 'Low';
     const fillPercentage = passengerCount / capacity;
     if (fillPercentage > 0.8) crowdLevel = 'High';
@@ -129,14 +142,14 @@ function updateBusRecord(busId, lat, lng, passengerCount, nextStopId, eta, capac
 
     db.run(`
         UPDATE buses 
-        SET lat = ?, lng = ?, passenger_count = ?, crowd_level = ?, next_stop_id = ?, eta_minutes = ? 
+        SET lat = ?, lng = ?, passenger_count = ?, crowd_level = ?, traffic_condition = ?, next_stop_id = ?, eta_minutes = ? 
         WHERE id = ?
-    `, [lat, lng, passengerCount, crowdLevel, nextStopId, eta, busId]);
+    `, [lat, lng, passengerCount, crowdLevel, trafficCondition, nextStopId, eta, busId]);
 }
 
 // Start Simulation
 setInterval(updateBusSimulation, SIMULATION_INTERVAL);
-console.log("Simulation engine started.");
+console.log("Simulation engine started with traffic and analytics modeling.");
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
