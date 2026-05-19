@@ -2,9 +2,8 @@ import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import MapPage from './pages/MapPage';
 import BusDetails from './pages/BusDetails';
-// Placeholders for other pages
-const Analytics = () => <div className="main-content"><h2>Analytics</h2><p>Coming soon...</p></div>;
-const Admin = () => <div className="main-content"><h2>Admin</h2><p>Coming soon...</p></div>;
+import Analytics from './pages/Analytics';
+import Admin from './pages/Admin';
 
 function App() {
   return (
